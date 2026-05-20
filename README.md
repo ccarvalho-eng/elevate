@@ -1,10 +1,12 @@
-# Elevate
-
-[![CI](https://github.com/ccarvalho-eng/elevate/actions/workflows/ci.yml/badge.svg)](https://github.com/ccarvalho-eng/elevate/actions/workflows/ci.yml)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
-![React](https://img.shields.io/badge/React-18-61dafb)
-![Three.js](https://img.shields.io/badge/Three.js-3D-111111)
-![License](https://img.shields.io/badge/License-Apache--2.0-blue)
+<div align="center">
+  <h1>Elevante—Blueprints to 3D</h1>
+  <img width="500" alt="elevate-logo" src="https://github.com/user-attachments/assets/1eec6f73-aed7-4001-8091-1e0bd40acc35" />
+  [![CI](https://github.com/ccarvalho-eng/elevate/actions/workflows/ci.yml/badge.svg)](https://github.com/ccarvalho-eng/elevate/actions/workflows/ci.yml)
+  ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
+  ![React](https://img.shields.io/badge/React-18-61dafb)
+  ![Three.js](https://img.shields.io/badge/Three.js-3D-111111)
+  ![License](https://img.shields.io/badge/License-Apache--2.0-blue)
+</div>
 
 Elevate is a local web app for turning a house blueprint into rough, interactive 3D perspective views. It is not CAD software; the goal is a fast spatial preview from a floor plan.
 

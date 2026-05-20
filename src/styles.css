@@ -51,6 +51,40 @@ h1 {
   line-height: 1.1;
 }
 
+.upload-panel input {
+  width: 100%;
+  margin-top: 8px;
+  color: #243244;
+  font: inherit;
+}
+
+.upload-status {
+  margin: 16px 0 0;
+  border: 1px solid #d4dbe3;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.upload-status.success {
+  border-color: #b7d9c2;
+  background: #f1f8f3;
+  color: #1d5131;
+}
+
+.upload-status.warning {
+  border-color: #e8cf8d;
+  background: #fff9e8;
+  color: #6a4a0b;
+}
+
+.upload-status.error {
+  border-color: #e3a8a8;
+  background: #fff1f1;
+  color: #7a2222;
+}
+
 .viewer-placeholder {
   display: grid;
   place-items: center;

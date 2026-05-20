@@ -1,18 +1,50 @@
 import { useRef, useState, type ChangeEvent } from "react";
 
+import { normalizeImageFile } from "./blueprint/normalize";
+import {
+  BlueprintExtractionError,
+  extractPlanFromCanvas,
+} from "./extractor/planExtractor";
 import { simplePlan } from "./fixtures/simplePlan";
-import { buildModelSpec } from "./model/modelBuilder";
+import { buildModelSpec, type ModelSpec } from "./model/modelBuilder";
 import { validateBlueprintFile } from "./upload/accept";
+import { renderPdfPage } from "./upload/pdf";
 import { BlueprintViewer } from "./viewer/BlueprintViewer";
 
 const sampleModel = buildModelSpec(simplePlan);
+const fallbackWarning =
+  "Could not extract enough walls, so the sample model is still shown.";
+
+type UploadStatus = {
+  message: string;
+  tone: "error" | "success" | "warning";
+};
+
+const statusRole = (tone: UploadStatus["tone"]) =>
+  tone === "error" ? "alert" : "status";
+
+const isKnownGenerationError = (error: unknown): boolean => {
+  if (error instanceof BlueprintExtractionError) {
+    return true;
+  }
+
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return [
+    "blueprint image",
+    "canvas",
+    "pdf",
+    "could not load",
+    "dimensions exceed",
+  ].some((text) => error.message.toLowerCase().includes(text));
+};
 
 export function App() {
   const validationRequestId = useRef(0);
-  const [uploadStatus, setUploadStatus] = useState<{
-    message: string;
-    valid: boolean;
-  } | null>(null);
+  const [model, setModel] = useState<ModelSpec>(sampleModel);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
 
   const handleBlueprintChange = async (
     event: ChangeEvent<HTMLInputElement>,
@@ -36,11 +68,53 @@ export function App() {
     }
 
     if (!validation.ok) {
-      setUploadStatus({ message: validation.reason, valid: false });
+      setUploadStatus({ message: validation.reason, tone: "error" });
       return;
     }
 
-    setUploadStatus({ message: "Blueprint selected.", valid: true });
+    setUploadStatus({ message: "Generating perspective.", tone: "success" });
+
+    try {
+      const normalized =
+        validation.kind === "pdf"
+          ? await renderPdfPage(file, 0)
+          : await normalizeImageFile(file);
+
+      if (requestId !== validationRequestId.current) {
+        return;
+      }
+
+      const plan = extractPlanFromCanvas(normalized.canvas);
+
+      if (plan.walls.length < 4) {
+        setModel(sampleModel);
+        setUploadStatus({ message: fallbackWarning, tone: "warning" });
+        return;
+      }
+
+      setModel(buildModelSpec(plan));
+      setUploadStatus({
+        message: "Generated perspective from blueprint.",
+        tone: "success",
+      });
+    } catch (error) {
+      if (requestId !== validationRequestId.current) {
+        return;
+      }
+
+      if (isKnownGenerationError(error)) {
+        setModel(sampleModel);
+        setUploadStatus({ message: fallbackWarning, tone: "warning" });
+        return;
+      }
+
+      setModel(sampleModel);
+      setUploadStatus({
+        message:
+          "Could not process this blueprint, so the sample model is still shown.",
+        tone: "error",
+      });
+    }
   };
 
   return (
@@ -60,12 +134,15 @@ export function App() {
             onChange={handleBlueprintChange}
           />
           {uploadStatus ? (
-            <p role={uploadStatus.valid ? "status" : "alert"}>
+            <p
+              className={`upload-status ${uploadStatus.tone}`}
+              role={statusRole(uploadStatus.tone)}
+            >
               {uploadStatus.message}
             </p>
           ) : null}
         </div>
-        <BlueprintViewer model={sampleModel} />
+        <BlueprintViewer model={model} />
       </section>
     </main>
   );

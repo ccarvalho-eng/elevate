@@ -39,7 +39,7 @@ export function BlueprintViewer({ model }: BlueprintViewerProps) {
       </div>
 
       <Canvas className="viewer-canvas" shadows dpr={[1, 1.75]}>
-        <color attach="background" args={["#eef2f5"]} />
+        <color attach="background" args={["#1f211f"]} />
         <PerspectiveCamera
           key={selectedPreset}
           makeDefault
@@ -74,7 +74,7 @@ function ModelScene({ model }: { model: ModelSpec }) {
     <group>
       <mesh position={model.floor.center} receiveShadow>
         <boxGeometry args={model.floor.size} />
-        <meshStandardMaterial color="#dfe5eb" roughness={0.84} />
+        <meshStandardMaterial color="#a9b2ad" roughness={0.86} />
       </mesh>
 
       {model.walls.map((wall) => (
@@ -85,7 +85,7 @@ function ModelScene({ model }: { model: ModelSpec }) {
           rotation={[0, -wall.rotationY, 0]}
         >
           <boxGeometry args={wall.size} />
-          <meshStandardMaterial color="#fbfcfd" roughness={0.68} />
+          <meshStandardMaterial color="#ede8dc" roughness={0.72} />
         </mesh>
       ))}
 
@@ -93,8 +93,8 @@ function ModelScene({ model }: { model: ModelSpec }) {
         args={[
           Math.max(model.floor.size[0], model.floor.size[2], 1),
           12,
-          "#b8c2cc",
-          "#d4dce4",
+          "#f39a3d",
+          "#44504d",
         ]}
         position={model.floor.center}
       />

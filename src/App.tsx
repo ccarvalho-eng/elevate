@@ -119,31 +119,50 @@ export function App() {
 
   return (
     <main className="app-shell">
-      <section className="workspace">
-        <div className="upload-panel">
-          <p className="eyebrow">Elevate</p>
-          <h1>Generate rough house perspectives from a blueprint.</h1>
-          <p>
-            Upload a PNG, JPG, or PDF plan and inspect a simple roof-off,
-            exterior, front, side, or interior perspective.
-          </p>
-          <input
-            aria-label="Upload blueprint"
-            type="file"
-            accept="image/png,image/jpeg,application/pdf"
-            onChange={handleBlueprintChange}
-          />
-          {uploadStatus ? (
-            <p
-              className={`upload-status ${uploadStatus.tone}`}
-              role={statusRole(uploadStatus.tone)}
-            >
-              {uploadStatus.message}
+      <div className="app-frame">
+        <header className="app-topbar" aria-label="Application workspace">
+          <p className="app-brand">Elevate</p>
+        </header>
+
+        <section className="workspace">
+          <aside className="upload-panel">
+            <div className="panel-header">
+              <span>Properties</span>
+              <span>Blueprint</span>
+            </div>
+            <p className="eyebrow">Elevate</p>
+            <h1>Generate rough house perspectives from a blueprint.</h1>
+            <p>
+              Upload a PNG, JPG, or PDF plan and inspect a simple roof-off,
+              exterior, front, side, or interior perspective.
             </p>
-          ) : null}
-        </div>
-        <BlueprintViewer model={model} />
-      </section>
+            <div className="panel-section">
+              <span className="field-label">Source file</span>
+              <input
+                aria-label="Upload blueprint"
+                type="file"
+                accept="image/png,image/jpeg,application/pdf"
+                onChange={handleBlueprintChange}
+              />
+            </div>
+            {uploadStatus ? (
+              <p
+                className={`upload-status ${uploadStatus.tone}`}
+                role={statusRole(uploadStatus.tone)}
+              >
+                {uploadStatus.message}
+              </p>
+            ) : null}
+          </aside>
+          <BlueprintViewer model={model} />
+        </section>
+
+        <footer className="status-strip" aria-label="Viewport status">
+          <span>Object Mode</span>
+          <span>Perspective</span>
+          <span>Units: meters</span>
+        </footer>
+      </div>
     </main>
   );
 }

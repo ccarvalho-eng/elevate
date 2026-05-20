@@ -5,7 +5,9 @@ test("renders the sample model with preset camera controls", async ({
 }) => {
   await page.goto("/");
 
-  await expect(page.getByText("Elevate")).toBeVisible();
+  await expect(
+    page.getByLabel("Application workspace").getByText("Elevate"),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", {
       name: "Generate rough house perspectives from a blueprint.",

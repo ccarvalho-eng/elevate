@@ -7,7 +7,7 @@
   />
 
   <p>
-    Blueprint-to-3D engine for developers, architects, and CAD workflows.
+    Experimental blueprint-to-3D reference app.
   </p>
 
   <p>
@@ -37,6 +37,12 @@
 </div>
 
 Elevate is a local web app for turning a house blueprint into rough, interactive 3D perspective views. It is not CAD software; the goal is a fast spatial preview from a floor plan.
+
+## Project Status
+
+Elevate was an experiment in converting 2D blueprints into approximate interactive 3D views with browser-based computer vision and Three.js. This repository is archived and no longer actively maintained, but it can still serve as a reference for anyone interested in continuing this direction.
+
+The most useful parts to build on are the upload normalization flow, deterministic blueprint extraction pipeline, non-AI structural filtering, scale-aware model generation, and React Three Fiber viewer. The output is intentionally approximate and should be treated as a spatial preview, not a CAD or construction model.
 
 ## What It Does
 

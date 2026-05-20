@@ -118,6 +118,7 @@ describe("extractPlanFromCanvas", () => {
     expect(plan.walls.every((wall) => segmentLength(wall.segment) > 0)).toBe(
       true,
     );
+    expect(plan.walls.every((wall) => wall.height === 2.7)).toBe(true);
     expect(plan.openings).toEqual([]);
   });
 

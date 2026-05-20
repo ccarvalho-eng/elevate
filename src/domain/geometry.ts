@@ -11,6 +11,7 @@ export type Segment2 = {
 export type Wall = {
   id: string;
   segment: Segment2;
+  height: number;
   thicknessMeters: number;
   exterior: boolean;
 };
@@ -32,25 +33,6 @@ export type Plan = {
   };
   walls: Wall[];
   openings: Opening[];
-};
-
-export type WallMeshSpec = {
-  wallId: Wall["id"];
-  segment: Segment2;
-  heightMeters: number;
-  thicknessMeters: number;
-  openings: Opening[];
-};
-
-export type FloorMeshSpec = {
-  width: number;
-  height: number;
-  scale: Plan["scale"];
-};
-
-export type ModelSpec = {
-  floor: FloorMeshSpec;
-  walls: WallMeshSpec[];
 };
 
 export function distance(a: Point2, b: Point2): number {

@@ -9,6 +9,7 @@ const SNAP_ENDPOINT_TOLERANCE = 2;
 const STROKE_BAND_TOLERANCE = 1;
 const MAX_WALL_SEGMENT_CANDIDATES = 4_096;
 const DEFAULT_PIXELS_PER_METER = 80;
+const DEFAULT_WALL_HEIGHT = 2.7;
 const DEFAULT_WALL_THICKNESS_METERS = 0.15;
 const MIN_WALL_SEGMENT_LENGTH = 0.000001;
 
@@ -310,6 +311,7 @@ export function extractPlanFromCanvas(canvas: HTMLCanvasElement): Plan {
     walls: segments.map((segment, index) => ({
       id: `wall-${index + 1}`,
       segment,
+      height: DEFAULT_WALL_HEIGHT,
       thicknessMeters: DEFAULT_WALL_THICKNESS_METERS,
       exterior: true,
     })),

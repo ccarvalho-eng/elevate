@@ -77,6 +77,78 @@ function strokeRectangle(
   });
 }
 
+function linePlanWithInteriorNoise(): HTMLCanvasElement {
+  return createHighContrastCanvas(40, 32, (setPixel) => {
+    for (let x = 4; x <= 35; x += 1) {
+      setPixel(x, 4, [0, 0, 0, 255]);
+      setPixel(x, 27, [0, 0, 0, 255]);
+    }
+
+    for (let y = 4; y <= 27; y += 1) {
+      setPixel(4, y, [0, 0, 0, 255]);
+      setPixel(20, y, [0, 0, 0, 255]);
+      setPixel(35, y, [0, 0, 0, 255]);
+    }
+
+    for (let x = 10; x <= 14; x += 1) {
+      setPixel(x, 12, [0, 0, 0, 255]);
+      setPixel(x, 16, [0, 0, 0, 255]);
+    }
+
+    for (let y = 12; y <= 16; y += 1) {
+      setPixel(10, y, [0, 0, 0, 255]);
+      setPixel(14, y, [0, 0, 0, 255]);
+    }
+  });
+}
+
+function rectangleWithDimensionLine(): HTMLCanvasElement {
+  return createHighContrastCanvas(40, 32, (setPixel) => {
+    for (let x = 4; x <= 35; x += 1) {
+      setPixel(x, 6, [0, 0, 0, 255]);
+      setPixel(x, 27, [0, 0, 0, 255]);
+    }
+
+    for (let y = 6; y <= 27; y += 1) {
+      setPixel(4, y, [0, 0, 0, 255]);
+      setPixel(35, y, [0, 0, 0, 255]);
+    }
+
+    for (let x = 8; x <= 31; x += 1) {
+      setPixel(x, 2, [0, 0, 0, 255]);
+    }
+
+    for (let y = 1; y <= 3; y += 1) {
+      setPixel(8, y, [0, 0, 0, 255]);
+      setPixel(31, y, [0, 0, 0, 255]);
+    }
+  });
+}
+
+function doubleLineRectangle(): HTMLCanvasElement {
+  return createHighContrastCanvas(40, 32, (setPixel) => {
+    for (let x = 4; x <= 35; x += 1) {
+      setPixel(x, 4, [0, 0, 0, 255]);
+      setPixel(x, 27, [0, 0, 0, 255]);
+    }
+
+    for (let x = 6; x <= 33; x += 1) {
+      setPixel(x, 6, [0, 0, 0, 255]);
+      setPixel(x, 25, [0, 0, 0, 255]);
+    }
+
+    for (let y = 4; y <= 27; y += 1) {
+      setPixel(4, y, [0, 0, 0, 255]);
+      setPixel(35, y, [0, 0, 0, 255]);
+    }
+
+    for (let y = 6; y <= 25; y += 1) {
+      setPixel(6, y, [0, 0, 0, 255]);
+      setPixel(33, y, [0, 0, 0, 255]);
+    }
+  });
+}
+
 function noisySegmentCandidateCanvas(width: number, height: number) {
   return createHighContrastCanvas(width, height, (setPixel) => {
     for (let y = 0; y < height; y += 1) {
@@ -130,6 +202,57 @@ describe("extractPlanFromCanvas", () => {
       "5,18->26,18",
       "5,5->26,5",
       "5,5->5,18",
+    ]);
+  });
+
+  it("ignores disconnected furniture-like shapes inside structural walls", () => {
+    const canvas = linePlanWithInteriorNoise();
+
+    expect(wallSegmentKeys(canvas)).toEqual([
+      "20,4->20,27",
+      "35,4->35,27",
+      "4,27->35,27",
+      "4,4->35,4",
+      "4,4->4,27",
+    ]);
+  });
+
+  it("marks connected interior partitions as non-exterior walls", () => {
+    const plan = extractPlanFromCanvas(linePlanWithInteriorNoise());
+    const wallsBySegment = new Map(
+      plan.walls.map((wall) => [segmentKey(wall.segment), wall]),
+    );
+
+    expect(wallsBySegment.get("20,4->20,27")).toMatchObject({
+      exterior: false,
+    });
+    expect(wallsBySegment.get("4,4->4,27")).toMatchObject({
+      exterior: true,
+    });
+    expect(wallsBySegment.get("35,4->35,27")).toMatchObject({
+      exterior: true,
+    });
+  });
+
+  it("ignores unconnected dimension lines outside the structural wall graph", () => {
+    const canvas = rectangleWithDimensionLine();
+
+    expect(wallSegmentKeys(canvas)).toEqual([
+      "35,6->35,27",
+      "4,27->35,27",
+      "4,6->35,6",
+      "4,6->4,27",
+    ]);
+  });
+
+  it("collapses close double-line walls into one structural centerline", () => {
+    const canvas = doubleLineRectangle();
+
+    expect(wallSegmentKeys(canvas)).toEqual([
+      "34,5->34,26",
+      "5,26->34,26",
+      "5,5->34,5",
+      "5,5->5,26",
     ]);
   });
 

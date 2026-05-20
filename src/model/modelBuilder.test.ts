@@ -87,4 +87,104 @@ describe("buildModelSpec", () => {
     expect(model.walls[0]?.center[1]).toBeCloseTo(1.6);
     expect(model.walls[0]?.size[1]).toBeCloseTo(3.2);
   });
+
+  it("sizes the floor from the structural wall envelope instead of full canvas bounds", () => {
+    const model = buildModelSpec({
+      width: 1000,
+      height: 1000,
+      scale: { pixelsPerMeter: 100 },
+      walls: [
+        {
+          id: "north",
+          segment: { start: { x: 100, y: 200 }, end: { x: 900, y: 200 } },
+          height: 2.7,
+          thicknessMeters: 0.15,
+          exterior: true,
+        },
+        {
+          id: "east",
+          segment: { start: { x: 900, y: 200 }, end: { x: 900, y: 800 } },
+          height: 2.7,
+          thicknessMeters: 0.15,
+          exterior: true,
+        },
+        {
+          id: "south",
+          segment: { start: { x: 900, y: 800 }, end: { x: 100, y: 800 } },
+          height: 2.7,
+          thicknessMeters: 0.15,
+          exterior: true,
+        },
+        {
+          id: "west",
+          segment: { start: { x: 100, y: 800 }, end: { x: 100, y: 200 } },
+          height: 2.7,
+          thicknessMeters: 0.15,
+          exterior: true,
+        },
+      ],
+      openings: [],
+    });
+
+    expect(model.floor.center).toEqual([5, 0, 5]);
+    expect(model.floor.size).toEqual([8, 0, 6]);
+  });
+
+  it("rescales tiny extracted footprints so default wall height stays proportional", () => {
+    const model = buildModelSpec({
+      width: 80,
+      height: 80,
+      scale: { pixelsPerMeter: 80 },
+      walls: [
+        {
+          id: "north",
+          segment: { start: { x: 4, y: 4 }, end: { x: 28, y: 4 } },
+          height: 2.7,
+          thicknessMeters: 0.15,
+          exterior: true,
+        },
+        {
+          id: "east",
+          segment: { start: { x: 28, y: 4 }, end: { x: 28, y: 22 } },
+          height: 2.7,
+          thicknessMeters: 0.15,
+          exterior: true,
+        },
+        {
+          id: "south",
+          segment: { start: { x: 28, y: 22 }, end: { x: 4, y: 22 } },
+          height: 2.7,
+          thicknessMeters: 0.15,
+          exterior: true,
+        },
+        {
+          id: "west",
+          segment: { start: { x: 4, y: 22 }, end: { x: 4, y: 4 } },
+          height: 2.7,
+          thicknessMeters: 0.15,
+          exterior: true,
+        },
+      ],
+      openings: [],
+    });
+
+    expect(model.floor.size[0]).toBeCloseTo(8);
+    expect(model.floor.size[2]).toBeCloseTo(6);
+    expect(model.walls[0]?.size[0]).toBeCloseTo(8);
+    expect(model.walls[0]?.size[1]).toBeCloseTo(2.7);
+  });
+
+  it("clamps unusually tall walls to a residential height cap", () => {
+    const model = buildModelSpec({
+      ...simplePlan,
+      walls: simplePlan.walls.map((wall) => ({
+        ...wall,
+        height: 8,
+      })),
+    });
+
+    expect(model.floor.size[2]).toBeCloseTo(5.25);
+    expect(model.walls[0]?.size[1]).toBeCloseTo(3.6);
+    expect(model.walls[0]?.center[1]).toBeCloseTo(1.8);
+  });
 });

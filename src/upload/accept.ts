@@ -24,6 +24,9 @@ const signatures = [
   },
 ] as const;
 
+const canonicalMimeType = (mimeType: string): string =>
+  mimeType === "image/jpg" ? "image/jpeg" : mimeType;
+
 const matchesSignature = (
   header: Uint8Array,
   signature: readonly number[],
@@ -73,7 +76,7 @@ export const validateBlueprintFile = async (
     return { ok: false, reason: uploadError };
   }
 
-  if (file.type !== "" && file.type !== match.mime) {
+  if (file.type !== "" && canonicalMimeType(file.type) !== match.mime) {
     return { ok: false, reason: uploadError };
   }
 

@@ -113,6 +113,17 @@ describe("validateBlueprintFile", () => {
     });
   });
 
+  it("accepts valid JPEG content when the browser reports the image/jpg MIME alias", async () => {
+    await expect(
+      validateBlueprintFile(
+        makeFile("vector-blueprint.jpg", "image/jpg", jpegSignature),
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      kind: "image",
+    });
+  });
+
   it.each([
     ["image/png", pngSignature],
     ["image/jpeg", jpegSignature],

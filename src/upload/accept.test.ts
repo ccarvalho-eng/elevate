@@ -124,6 +124,18 @@ describe("validateBlueprintFile", () => {
     });
   });
 
+  it.each(["image/pjpeg", "image/x-jpeg", "application/octet-stream"] as const)(
+    "accepts valid JPEG content when the browser reports %s",
+    async (type) => {
+      await expect(
+        validateBlueprintFile(makeFile("blueprint.jpg", type, jpegSignature)),
+      ).resolves.toEqual({
+        ok: true,
+        kind: "image",
+      });
+    },
+  );
+
   it.each([
     ["image/png", pngSignature],
     ["image/jpeg", jpegSignature],

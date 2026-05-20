@@ -24,8 +24,15 @@ const signatures = [
   },
 ] as const;
 
-const canonicalMimeType = (mimeType: string): string =>
-  mimeType === "image/jpg" ? "image/jpeg" : mimeType;
+const genericMimeTypes = new Set(["", "application/octet-stream"]);
+
+const canonicalMimeType = (mimeType: string): string => {
+  if (["image/jpg", "image/pjpeg", "image/x-jpeg"].includes(mimeType)) {
+    return "image/jpeg";
+  }
+
+  return mimeType;
+};
 
 const matchesSignature = (
   header: Uint8Array,
@@ -76,7 +83,10 @@ export const validateBlueprintFile = async (
     return { ok: false, reason: uploadError };
   }
 
-  if (file.type !== "" && canonicalMimeType(file.type) !== match.mime) {
+  if (
+    !genericMimeTypes.has(file.type) &&
+    canonicalMimeType(file.type) !== match.mime
+  ) {
     return { ok: false, reason: uploadError };
   }
 

@@ -6,7 +6,9 @@ const DARK_PIXEL_THRESHOLD = 128;
 const MIN_WALL_RUN_PIXELS = 4;
 const MERGE_GAP_TOLERANCE = 1;
 const SNAP_ENDPOINT_TOLERANCE = 2;
-const STROKE_BAND_TOLERANCE = 1;
+const STROKE_BAND_TOLERANCE = 2;
+const STRUCTURAL_CONNECT_TOLERANCE = 2;
+const SECONDARY_STRUCTURAL_COMPONENT_RATIO = 0.35;
 const MAX_WALL_SEGMENT_CANDIDATES = 4_096;
 const DEFAULT_PIXELS_PER_METER = 80;
 const DEFAULT_WALL_HEIGHT = 2.7;
@@ -40,6 +42,18 @@ type StrokeBand = {
 type SegmentCollector = {
   segments: Segment2[];
   push: (segment: Segment2) => void;
+};
+
+type StructuralComponent = {
+  segmentIndexes: number[];
+  totalLength: number;
+};
+
+type SegmentBounds = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
 };
 
 export class BlueprintExtractionError extends Error {
@@ -195,6 +209,195 @@ function createSegmentCollector(): SegmentCollector {
   };
 }
 
+function valueInRange(value: number, start: number, end: number): boolean {
+  return (
+    value >= start - STRUCTURAL_CONNECT_TOLERANCE &&
+    value <= end + STRUCTURAL_CONNECT_TOLERANCE
+  );
+}
+
+function normalizedSegmentsConnect(
+  first: NormalizedSegment,
+  second: NormalizedSegment,
+): boolean {
+  if (first.axis === second.axis) {
+    const coordinateDistance = Math.abs(first.coordinate - second.coordinate);
+    const gap =
+      Math.max(first.start, second.start) - Math.min(first.end, second.end);
+
+    return (
+      coordinateDistance <= STRUCTURAL_CONNECT_TOLERANCE &&
+      gap <= STRUCTURAL_CONNECT_TOLERANCE
+    );
+  }
+
+  const horizontal = first.axis === "horizontal" ? first : second;
+  const vertical = first.axis === "vertical" ? first : second;
+
+  return (
+    valueInRange(vertical.coordinate, horizontal.start, horizontal.end) &&
+    valueInRange(horizontal.coordinate, vertical.start, vertical.end)
+  );
+}
+
+function segmentsConnect(first: Segment2, second: Segment2): boolean {
+  const normalizedFirst = classifySegment(first);
+  const normalizedSecond = classifySegment(second);
+
+  if (!normalizedFirst || !normalizedSecond) {
+    return false;
+  }
+
+  return normalizedSegmentsConnect(normalizedFirst, normalizedSecond);
+}
+
+function buildStructuralComponents(
+  segments: Segment2[],
+): StructuralComponent[] {
+  const adjacency = segments.map(() => new Set<number>());
+
+  for (let firstIndex = 0; firstIndex < segments.length; firstIndex += 1) {
+    for (
+      let secondIndex = firstIndex + 1;
+      secondIndex < segments.length;
+      secondIndex += 1
+    ) {
+      if (!segmentsConnect(segments[firstIndex], segments[secondIndex])) {
+        continue;
+      }
+
+      adjacency[firstIndex].add(secondIndex);
+      adjacency[secondIndex].add(firstIndex);
+    }
+  }
+
+  const visited = new Set<number>();
+  const components: StructuralComponent[] = [];
+
+  for (let index = 0; index < segments.length; index += 1) {
+    if (visited.has(index)) {
+      continue;
+    }
+
+    const segmentIndexes: number[] = [];
+    const pending = [index];
+    visited.add(index);
+
+    while (pending.length > 0) {
+      const currentIndex = pending.pop();
+
+      if (currentIndex === undefined) {
+        continue;
+      }
+
+      segmentIndexes.push(currentIndex);
+
+      for (const nextIndex of adjacency[currentIndex]) {
+        if (visited.has(nextIndex)) {
+          continue;
+        }
+
+        visited.add(nextIndex);
+        pending.push(nextIndex);
+      }
+    }
+
+    components.push({
+      segmentIndexes,
+      totalLength: segmentIndexes.reduce(
+        (total, segmentIndex) => total + segmentLength(segments[segmentIndex]),
+        0,
+      ),
+    });
+  }
+
+  return components.sort((a, b) => b.totalLength - a.totalLength);
+}
+
+function filterStructuralSegments(segments: Segment2[]): Segment2[] {
+  if (segments.length <= 1) {
+    return segments;
+  }
+
+  const components = buildStructuralComponents(segments);
+  const primaryComponent = components[0];
+
+  if (!primaryComponent) {
+    return segments;
+  }
+
+  const minimumSecondaryLength =
+    primaryComponent.totalLength * SECONDARY_STRUCTURAL_COMPONENT_RATIO;
+  const structuralIndexes = new Set<number>();
+
+  for (const component of components) {
+    if (
+      component !== primaryComponent &&
+      component.totalLength < minimumSecondaryLength
+    ) {
+      continue;
+    }
+
+    for (const segmentIndex of component.segmentIndexes) {
+      structuralIndexes.add(segmentIndex);
+    }
+  }
+
+  return segments.filter((_, index) => structuralIndexes.has(index));
+}
+
+function structuralBounds(segments: Segment2[]): SegmentBounds | null {
+  if (segments.length === 0) {
+    return null;
+  }
+
+  return segments.reduce<SegmentBounds>(
+    (bounds, segment) => ({
+      minX: Math.min(bounds.minX, segment.start.x, segment.end.x),
+      maxX: Math.max(bounds.maxX, segment.start.x, segment.end.x),
+      minY: Math.min(bounds.minY, segment.start.y, segment.end.y),
+      maxY: Math.max(bounds.maxY, segment.start.y, segment.end.y),
+    }),
+    {
+      minX: Number.POSITIVE_INFINITY,
+      maxX: Number.NEGATIVE_INFINITY,
+      minY: Number.POSITIVE_INFINITY,
+      maxY: Number.NEGATIVE_INFINITY,
+    },
+  );
+}
+
+function isNear(value: number, target: number): boolean {
+  return Math.abs(value - target) <= STRUCTURAL_CONNECT_TOLERANCE;
+}
+
+function isExteriorSegment(
+  segment: Segment2,
+  bounds: SegmentBounds | null,
+): boolean {
+  if (!bounds) {
+    return true;
+  }
+
+  const normalized = classifySegment(segment);
+
+  if (!normalized) {
+    return true;
+  }
+
+  if (normalized.axis === "horizontal") {
+    return (
+      isNear(normalized.coordinate, bounds.minY) ||
+      isNear(normalized.coordinate, bounds.maxY)
+    );
+  }
+
+  return (
+    isNear(normalized.coordinate, bounds.minX) ||
+    isNear(normalized.coordinate, bounds.maxX)
+  );
+}
+
 function scanHorizontalSegments(
   data: Uint8ClampedArray,
   width: number,
@@ -282,9 +485,12 @@ function extractSegments(
     SNAP_ENDPOINT_TOLERANCE,
   );
 
-  return mergeCollinearSegments(snappedSegments, MERGE_GAP_TOLERANCE).filter(
-    (segment) => segmentLength(segment) >= MIN_WALL_SEGMENT_LENGTH,
-  );
+  const structuralSegments = mergeCollinearSegments(
+    snappedSegments,
+    MERGE_GAP_TOLERANCE,
+  ).filter((segment) => segmentLength(segment) >= MIN_WALL_SEGMENT_LENGTH);
+
+  return filterStructuralSegments(structuralSegments);
 }
 
 export function extractPlanFromCanvas(canvas: HTMLCanvasElement): Plan {
@@ -301,6 +507,7 @@ export function extractPlanFromCanvas(canvas: HTMLCanvasElement): Plan {
     canvas.height,
   );
   const segments = extractSegments(data, width, height);
+  const bounds = structuralBounds(segments);
 
   return {
     width: canvas.width,
@@ -313,7 +520,7 @@ export function extractPlanFromCanvas(canvas: HTMLCanvasElement): Plan {
       segment,
       height: DEFAULT_WALL_HEIGHT,
       thicknessMeters: DEFAULT_WALL_THICKNESS_METERS,
-      exterior: true,
+      exterior: isExteriorSegment(segment, bounds),
     })),
     openings: [],
   };

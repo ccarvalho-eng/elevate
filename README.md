@@ -44,6 +44,9 @@ Elevate is a local web app for turning a house blueprint into rough, interactive
 - Validates uploads using file signatures and size limits.
 - Renders PDF page 1 into an image canvas.
 - Extracts rough wall geometry from high-contrast floor plans.
+- Filters likely furniture, dimension lines, and disconnected annotations before modeling.
+- Collapses close double-line wall strokes into structural centerlines.
+- Sizes the floor from detected wall bounds and rescales tiny footprints to avoid over-tall walls.
 - Converts the plan into a simple 3D wall/floor model.
 - Provides preset views: roof-off, exterior, front, side, and interior.
 

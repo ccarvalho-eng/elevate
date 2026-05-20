@@ -8,6 +8,15 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
+vi.mock("./viewer/BlueprintViewer", () => ({
+  BlueprintViewer: () => (
+    <section aria-label="3D perspective viewer">
+      <button type="button">Roof-off</button>
+      <button type="button">Exterior</button>
+    </section>
+  ),
+}));
+
 const pngSignature = new Uint8Array([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
 ]);
@@ -43,11 +52,14 @@ const makeDeferredHeaderFile = (type: string) => {
 describe("App", () => {
   afterEach(cleanup);
 
-  it("renders the upload control and viewer placeholder", () => {
+  it("renders the upload control and sample 3D viewer", () => {
     render(<App />);
 
     expect(screen.getByLabelText("Upload blueprint")).toBeInTheDocument();
-    expect(screen.getByText("3D viewer will render here")).toBeInTheDocument();
+    expect(screen.getByLabelText("3D perspective viewer")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Roof-off" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the validation error before processing an unsupported upload", async () => {

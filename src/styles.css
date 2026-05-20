@@ -5,7 +5,12 @@
 body {
   margin: 0;
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
     sans-serif;
   background: #f5f7f8;
   color: #18212f;
@@ -52,8 +57,71 @@ h1 {
   color: #526173;
 }
 
+.viewer {
+  position: relative;
+  height: calc(100vh - 48px);
+  min-height: 520px;
+  overflow: hidden;
+  border: 1px solid #d4dbe3;
+  border-radius: 8px;
+  background: #eef2f5;
+}
+
+.viewer canvas {
+  display: block;
+}
+
+.viewer-canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.viewer-toolbar {
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+}
+
+.viewer-toolbar button {
+  min-height: 36px;
+  border: 1px solid #c2cad4;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #243244;
+  padding: 8px 11px;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.viewer-toolbar button:hover {
+  border-color: #94a3b8;
+  background: #ffffff;
+}
+
+.viewer-toolbar button.active {
+  border-color: #1f2937;
+  background: #1f2937;
+  color: #ffffff;
+}
+
 @media (max-width: 800px) {
   .workspace {
     grid-template-columns: 1fr;
+  }
+
+  .viewer {
+    height: 520px;
   }
 }

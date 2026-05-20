@@ -1,6 +1,11 @@
 import { useRef, useState, type ChangeEvent } from "react";
 
+import { simplePlan } from "./fixtures/simplePlan";
+import { buildModelSpec } from "./model/modelBuilder";
 import { validateBlueprintFile } from "./upload/accept";
+import { BlueprintViewer } from "./viewer/BlueprintViewer";
+
+const sampleModel = buildModelSpec(simplePlan);
 
 export function App() {
   const validationRequestId = useRef(0);
@@ -42,7 +47,7 @@ export function App() {
     <main className="app-shell">
       <section className="workspace">
         <div className="upload-panel">
-          <p className="eyebrow">Blueprint POV</p>
+          <p className="eyebrow">Elevate</p>
           <h1>Generate rough house perspectives from a blueprint.</h1>
           <p>
             Upload a PNG, JPG, or PDF plan and inspect a simple roof-off,
@@ -60,7 +65,7 @@ export function App() {
             </p>
           ) : null}
         </div>
-        <div className="viewer-placeholder">3D viewer will render here</div>
+        <BlueprintViewer model={sampleModel} />
       </section>
     </main>
   );

@@ -17,6 +17,9 @@ const pngSignature = new Uint8Array([
 const jpegSignature = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
 const pdfSignature = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
 const gifSignature = new Uint8Array([0x47, 0x49, 0x46, 0x38]);
+const webpSignature = new Uint8Array([
+  0x52, 0x49, 0x46, 0x46, 0x24, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+]);
 
 const makeFile = (
   name: string,
@@ -53,6 +56,7 @@ describe("validateBlueprintFile", () => {
   it.each([
     ["image/png", pngSignature, "image"],
     ["image/jpeg", jpegSignature, "image"],
+    ["image/webp", webpSignature, "image"],
     ["application/pdf", pdfSignature, "pdf"],
   ] as const)(
     "accepts %s uploads as %s blueprints",
@@ -90,10 +94,9 @@ describe("validateBlueprintFile", () => {
 
   it.each([
     ["image/png", pdfSignature],
-    ["image/jpeg", pngSignature],
     ["application/pdf", jpegSignature],
   ] as const)(
-    "rejects supported %s uploads when the content signature does not match",
+    "rejects supported %s uploads when the content signature crosses the image/pdf boundary",
     async (type, content) => {
       await expect(
         validateBlueprintFile(makeFile("blueprint", type, content)),
@@ -129,6 +132,22 @@ describe("validateBlueprintFile", () => {
     async (type) => {
       await expect(
         validateBlueprintFile(makeFile("blueprint.jpg", type, jpegSignature)),
+      ).resolves.toEqual({
+        ok: true,
+        kind: "image",
+      });
+    },
+  );
+
+  it.each([
+    ["image/jpeg", pngSignature],
+    ["image/jpeg", webpSignature],
+    ["image/jpg", webpSignature],
+  ] as const)(
+    "accepts verified image content even when %s reports a different image subtype",
+    async (type, content) => {
+      await expect(
+        validateBlueprintFile(makeFile("blueprint.jpg", type, content)),
       ).resolves.toEqual({
         ok: true,
         kind: "image",

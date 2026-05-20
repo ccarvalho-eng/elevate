@@ -2,7 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { buildModelSpec, type ModelSpec } from "../model/modelBuilder";
 import { simplePlan } from "../fixtures/simplePlan";
-import { BlueprintViewer, getModelBounds } from "./BlueprintViewer";
+import { BlueprintViewer } from "./BlueprintViewer";
+import { getModelBounds } from "./modelBounds";
 
 vi.mock("@react-three/fiber", () => ({
   Canvas: () => <div data-testid="canvas" />,

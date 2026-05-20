@@ -4,23 +4,33 @@ export type BlueprintFileValidation =
 
 const uploadError = "Upload a PNG, JPG, or PDF blueprint.";
 const maxFileBytes = 20 * 1024 * 1024;
-const maxSignatureBytes = 8;
+const maxSignatureBytes = 12;
 
 const signatures = [
   {
     kind: "image",
     mime: "image/png",
-    bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+    matches: (header: Uint8Array) =>
+      matchesBytes(header, 0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
   },
   {
     kind: "image",
     mime: "image/jpeg",
-    bytes: [0xff, 0xd8, 0xff],
+    matches: (header: Uint8Array) =>
+      matchesBytes(header, 0, [0xff, 0xd8, 0xff]),
+  },
+  {
+    kind: "image",
+    mime: "image/webp",
+    matches: (header: Uint8Array) =>
+      matchesBytes(header, 0, [0x52, 0x49, 0x46, 0x46]) &&
+      matchesBytes(header, 8, [0x57, 0x45, 0x42, 0x50]),
   },
   {
     kind: "pdf",
     mime: "application/pdf",
-    bytes: [0x25, 0x50, 0x44, 0x46, 0x2d],
+    matches: (header: Uint8Array) =>
+      matchesBytes(header, 0, [0x25, 0x50, 0x44, 0x46, 0x2d]),
   },
 ] as const;
 
@@ -34,15 +44,16 @@ const canonicalMimeType = (mimeType: string): string => {
   return mimeType;
 };
 
-const matchesSignature = (
+const matchesBytes = (
   header: Uint8Array,
+  offset: number,
   signature: readonly number[],
 ): boolean => {
-  if (header.length < signature.length) {
+  if (header.length < offset + signature.length) {
     return false;
   }
 
-  return signature.every((byte, index) => header[index] === byte);
+  return signature.every((byte, index) => header[offset + index] === byte);
 };
 
 const readHeader = async (file: File): Promise<Uint8Array> => {
@@ -77,7 +88,7 @@ export const validateBlueprintFile = async (
   }
 
   const header = await readHeader(file);
-  const match = signatures.find(({ bytes }) => matchesSignature(header, bytes));
+  const match = signatures.find(({ matches }) => matches(header));
 
   if (!match) {
     return { ok: false, reason: uploadError };
@@ -85,10 +96,22 @@ export const validateBlueprintFile = async (
 
   if (
     !genericMimeTypes.has(file.type) &&
-    canonicalMimeType(file.type) !== match.mime
+    mimeKind(canonicalMimeType(file.type)) !== match.kind
   ) {
     return { ok: false, reason: uploadError };
   }
 
   return { ok: true, kind: match.kind };
+};
+
+const mimeKind = (mimeType: string): "image" | "pdf" | "unknown" => {
+  if (mimeType.startsWith("image/")) {
+    return "image";
+  }
+
+  if (mimeType === "application/pdf") {
+    return "pdf";
+  }
+
+  return "unknown";
 };
